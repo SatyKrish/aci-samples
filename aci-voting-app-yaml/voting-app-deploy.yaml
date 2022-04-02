@@ -1,0 +1,40 @@
+apiVersion: 2019-12-01
+location: eastus
+name: aciVotingApp
+properties:
+  containers:
+  - name: voting-frontend
+    properties:
+      image: mcr.microsoft.com/azuredocs/azure-vote-front:v1
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1
+      ports:
+      - protocol: tcp
+        port: 80
+      environmentVariables: 
+      - name: REDIS
+        value: localhost
+  - name: voting-backend
+    properties:
+      image: mcr.microsoft.com/oss/bitnami/redis:6.0.8
+      resources:
+        requests:
+          cpu: 1
+          memoryInGb: 1
+      ports:
+      - protocol: tcp
+        port: 6379
+      environmentVariables: 
+      - name: ALLOW_EMPTY_PASSWORD
+        value: 'yes'
+  osType: Linux
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 80
+    dnsNameLabel: acivotingapp
+tags: {app: voting}
+type: Microsoft.ContainerInstance/containerGroups

@@ -1,0 +1,114 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "containerGroupName": {
+        "type": "string",
+        "defaultValue": "aciInitContainerGroup",
+        "metadata": {
+          "description": "Container Group name."
+        }
+      }
+    },
+    "resources": [
+        {
+            "name": "[parameters('containerGroupName')]",
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2019-12-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": "Standard",
+                "initContainers": [
+                {
+                    "name": "init1",
+                    "properties": {
+                        "image": "mcr.microsoft.com/aks/e2e/library-busybox:master.210714.1",
+                        "environmentVariables": [],
+                        "volumeMounts": [
+                            {
+                                "name": "emptydir1",
+                                "mountPath": "/mnt/emptydir"
+                            }
+                        ],
+                         "command": [
+                            "/bin/sh",
+                            "-c",
+                            "sleep 60; echo python wordcount.py http://shakespeare.mit.edu/romeo_juliet/full.html > /mnt/emptydir/command_line.txt"
+                        ]
+                    }
+                }
+            ], 
+                "containers": [
+                    {
+                        "name": "hamlet",
+                        "properties": {
+                            "image": "mcr.microsoft.com/azuredocs/aci-wordcount",
+                            "volumeMounts": [
+                            {
+                                "name": "emptydir1",
+                                "mountPath": "/mnt/emptydir"
+                            }
+                        ],
+                            "environmentVariables": [
+                             {
+                                "name": "NumWords",
+                                "value": "3"
+                             },
+                             {  "name": "MinLength",
+                                "value": "5"
+                             }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "memoryInGB": 1.0,
+                                    "cpu": 1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "juliet",
+                        "properties": {
+                            "image": "mcr.microsoft.com/azuredocs/aci-wordcount",
+                            "volumeMounts": [
+                            {
+                                "name": "emptydir1",
+                                "mountPath": "/mnt/emptydir"
+                            }
+                            ],
+                            "command": [
+                                "/bin/sh",
+                                "-c",
+                                "$(cat /mnt/emptydir/command_line.txt)"
+                            ],
+                            "environmentVariables": [
+                             {
+                                "name": "NumWords",
+                                "value": "3"
+                             },
+                             {  "name": "MinLength",
+                                "value": "5"
+                             }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "memoryInGB": 1.0,
+                                    "cpu": 1
+                                }
+                            }
+                        }
+                    }
+                ],
+                "restartPolicy": "OnFailure",
+                "osType": "Linux",
+                "volumes": [
+                    {
+                        "name": "emptydir1",
+                        "emptyDir": {}
+                    }
+                ]           
+            },
+            "tags": {}
+        }
+    ]
+}
